@@ -1,0 +1,15 @@
+WEBVTT
+
+00:00:00.000 --> 00:00:03.000
+Example ruby (horizontal): <ruby>base text<rt>ruby text</rt></ruby>
+
+00:00:03.000 --> 00:00:06.000 vertical:rl
+Example ruby (vertical, growing left): <ruby>base text<rt>ruby text</rt></ruby>
+
+00:00:06.000 --> 00:00:09.000 vertical:lr
+Example ruby (vertical, growing right): <ruby>base text<rt>ruby text</rt></ruby>
+
+
+
+
+
