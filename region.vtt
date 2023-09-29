@@ -1,0 +1,12 @@
+WEBVTT
+
+REGION
+id:br
+width:40%
+lines:3
+regionanchor:100%,100%
+viewportanchor:100%,100%
+scroll:up
+
+00:00:00.000 --> 00:00:10.000 region:br
+Bottom right
