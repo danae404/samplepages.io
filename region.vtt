@@ -1,35 +1,41 @@
 WEBVTT
 
 REGION
-id:fred
-width:40%
-lines:3
-regionanchor:0%,100%
-viewportanchor:10%,90%
-scroll:up
-
-REGION
-id:bill
+id:bottomRight
 width:40%
 lines:3
 regionanchor:100%,100%
-viewportanchor:90%,90%
-scroll:up
+viewportanchor:100%,100%
 
-00:00:00.000 --> 00:00:20.000 region:fred align:left
-<v Fred>Hi, my name is Fred
+REGION
+id:bottomLeft
+width:40%
+lines:3
+regionanchor:0%,100%
+viewportanchor:0%,100%
 
-00:00:02.500 --> 00:00:22.500 region:bill align:right
-<v Bill>Hi, I’m Bill
+REGION
+id:topRight
+width:40%
+lines:3
+regionanchor:100%,0%
+viewportanchor:100%,0%
 
-00:00:05.000 --> 00:00:25.000 region:fred align:left
-<v Fred>Would you like to get a coffee?
+REGION
+id:topLeft
+width:40%
+lines:3
+regionanchor:0%,0%
+viewportanchor:0%,0%
 
-00:00:07.500 --> 00:00:27.500 region:bill align:right
-<v Bill>Sure! I’ve only had one today.
+00:00:00.000 --> 00:00:10.000 region:bottomRight
+Bottom Right
 
-00:00:10.000 --> 00:00:30.000 region:fred align:left
-<v Fred>This is my fourth!
+00:00:00.000 --> 00:00:10.000 region:bottomLeft
+Bottom Left
 
-00:00:12.500 --> 00:00:32.500 region:fred align:left
-<v Fred>OK, let’s go.
+00:00:00.000 --> 00:00:10.000 region:topRight
+Top Right
+
+00:00:00.000 --> 00:00:10.000 region:topLeft
+Top Left
