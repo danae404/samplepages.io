@@ -19,8 +19,14 @@ viewportanchor:100%,100%
 00:00:05.000 --> 00:00:10.000 region:scroll
 2nd cue in scrolling region
 
+00:00:07.000 --> 00:00:10.000 region:scroll
+3rd cue in scrolling region
+
 00:00:00.000 --> 00:00:10.000 region:noscroll
 1st cue in non-scrolling region
 
 00:00:05.000 --> 00:00:10.000 region:noscroll
 2nd cue in non-scrolling region
+
+00:00:07.000 --> 00:00:10.000 region:noscroll
+3rd cue in non-scrolling region
