@@ -1,0 +1,23 @@
+<html>
+    <h1>In-Window Fullscreen</h1>
+    <video id="video" width="400" controls>
+      <source src="trees.mp4" type="video/mp4">
+    </video>
+    <button id="button">enter in-window fullscreen</button>
+<script>
+var video = document.getElementById('video');
+var buttonElement = document.getElementById('button');
+var statusElement = document.getElementById('status'); 
+
+  
+    // Toggle mode when the user clicks the button.
+    buttonElement.addEventListener("click", function(event) {
+      video.webkitSetPresentationMode("in-window");
+    }, false);
+
+
+video.addEventListener('webkitpresentationmodechanged', renderStatus)
+
+
+</script>
+</html>
