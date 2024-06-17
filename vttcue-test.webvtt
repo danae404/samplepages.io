@@ -1,0 +1,40 @@
+WEBVTT
+
+00:00:00.000 --> 00:00:00.100
+Test Text
+
+00:00:00.100 --> 00:00:00.200 align:left
+Test Text
+
+00:00:00.200 --> 00:00:00.300 align:right
+Test Text
+
+00:00:00.300 --> 00:00:00.400 size:20%
+Test Text
+
+00:00:00.400 --> 00:00:00.500 vertical:rl
+Test Text
+
+00:00:00.500 --> 00:00:00.600 vertical:lr
+Test Text
+
+00:00:00.600 --> 00:00:00.700 line:1
+Test Text
+
+00:00:00.700 --> 00:00:00.800 line:10
+Test Text
+
+00:00:00.800 --> 00:00:00.900 line:33%,center
+Test Text
+
+00:00:00.900 --> 00:00:01.000 line:50%,end
+Test Text
+
+00:00:01.000 --> 00:00:01.100 position:25%
+Test Text
+
+00:00:01.100 --> 00:00:01.200 position:10%,line-left align:left size:35%
+Test Text
+
+00:00:01.200 --> 00:00:01.300 vertical:rl
+<ruby>Test<rt>Ruby</rt></ruby> Text

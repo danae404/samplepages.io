@@ -1,0 +1,256 @@
+---
+title: VTTCue Test
+tags: Subtitles
+---
+<meta name="viewport" content="width=device-width">
+<title>Audio Cues</title>
+<link rel="preload" type="font/ttf" as="font" href="../../common_assets/fonts/ahem.ttf" />
+<link rel="stylesheet" type="text/css" href="../../common_assets/fonts/ahem.css" />
+<style>
+    .vttcue-test {
+        display: inline-block;
+    }
+    .description {
+        max-width: 200px;
+    }
+    video {
+        mix-blend-mode: difference;
+    }
+    .video-wrapper {
+        container-type: inline-size;
+        width: 200px;
+        height: 200px;
+        display: inline-block;
+        isolation: isolate;
+        position: relative;
+        border: 1px solid black;
+    }
+    .cue-test, video {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
+    .reference-track-display {
+        display: inline-block;
+        text-align: center;
+    }
+    ::cue {
+        color: rgb(128, 0, 0);
+        background-color: rgb(255, 0, 0);
+    }
+    .reference-cue {
+        color: rgb(128, 128, 0);
+        background-color: rgb(258, 258, 0);
+        white-space: pre-line;
+    }
+    ::cue, .reference-track-display {
+        font: 5cqmin/1 Ahem;
+    }
+</style>
+<script>
+window.addEventListener('load', () => {
+    console.log('load');
+});
+</script>
+</head>
+<body>
+<div>
+    <div class="vttcue-test" id="test1">
+        <div class="description">Test standard cue rendering:</div>
+        <div class="video-wrapper">
+            <div class="cue-test">
+                <div class="reference-track-display" style="position: absolute; width: 100%; bottom: 0px;">
+                    <span class="reference-cue" style="margin: auto">Test Text</span>
+                </div>
+            </div>
+            <video muted playsinline>
+                <source src="../../common_assets/media/silent.mp3#t=0.05" type="audio/mp3">
+                <track src="vttcue-test.webvtt" kind="captions" default>
+            </video>
+        </div>
+    </div>
+
+    <div class="vttcue-test" id="test2">
+        <div class="description">Test <code>align: left</code>:</div>
+        <div class="video-wrapper">
+            <div class="cue-test">
+                <div class="reference-track-display" style="position: absolute; width: 100%; bottom: 0px; text-align: left">
+                    <span class="reference-cue" style="margin: auto">Test Text</span>
+                </div>
+            </div>
+            <video muted playsinline>
+                <source src="../../common_assets/media/silent.mp3#t=0.15" type="audio/mp3">
+                <track src="vttcue-test.webvtt" kind="captions" default>
+            </video>
+        </div>
+    </div>
+
+    <div class="vttcue-test" id="test3">
+        <div class="description">Test <code>align: left</code>:</div>
+        <div class="video-wrapper">
+            <div class="cue-test">
+                <div class="reference-track-display" style="position: absolute; width: 100%; bottom: 0px; text-align: right">
+                    <span class="reference-cue" style="margin: auto">Test Text</span>
+                </div>
+            </div>
+            <video muted playsinline>
+                <source src="../../common_assets/media/silent.mp3#t=0.25" type="audio/mp3">
+                <track src="vttcue-test.webvtt" kind="captions" default>
+            </video>
+        </div>
+    </div>
+
+
+    <div class="vttcue-test" id="test4">
+        <div class="description">Test <code>size: 20%</code>:</div>
+        <div class="video-wrapper">
+            <div class="cue-test">
+                <div class="reference-track-display" style="position: absolute; width: 20%; left: 40%; bottom: 0px">
+                    <span class="reference-cue">Test Text</span>
+                </div>
+            </div>
+            <video muted playsinline>
+                <source src="../../common_assets/media/silent.mp3#t=0.35" type="audio/mp3">
+                <track src="vttcue-test.webvtt" kind="captions" default>
+            </video>
+        </div>
+    </div>
+
+    <div class="vttcue-test" id="test5">
+        <div class="description">Test <code>vertical: rl</code>:</div>
+        <div class="video-wrapper">
+            <div class="cue-test">
+                <div class="reference-track-display" style="position: absolute; height: 100%; left: 0%; writing-mode: vertical-rl;">
+                    <span class="reference-cue">Test Text</span>
+                </div>
+            </div>
+            <video muted playsinline>
+                <source src="../../common_assets/media/silent.mp3#t=0.45" type="audio/mp3">
+                <track src="vttcue-test.webvtt" kind="captions" default>
+            </video>
+        </div>
+    </div>
+
+    <div class="vttcue-test" id="test6">
+        <div class="description">Test <code>vertical: lr</code>:</div>
+        <div class="video-wrapper">
+            <div class="cue-test">
+                <div class="reference-track-display" style="position: absolute; height: 100%; right: 0%; writing-mode: vertical-lr;">
+                    <span class="reference-cue">Test Text</span>
+                </div>
+            </div>
+            <video muted playsinline>
+                <source src="../../common_assets/media/silent.mp3#t=0.55" type="audio/mp3">
+                <track src="vttcue-test.webvtt" kind="captions" default>
+            </video>
+        </div>
+    </div>
+
+    <div class="vttcue-test" id="test7">
+        <div class="description">Test <code>line: 1</code>:</div>
+        <div class="video-wrapper">
+            <div class="cue-test">
+                <div class="reference-track-display" style="position: absolute; width: 100%; top: 1lh;">
+                    <span class="reference-cue">Test Text</span>
+                </div>
+            </div>
+            <video muted playsinline>
+                <source src="../../common_assets/media/silent.mp3#t=0.65" type="audio/mp3">
+                <track src="vttcue-test.webvtt" kind="captions" default>
+            </video>
+        </div>
+    </div>
+
+    <div class="vttcue-test" id="test8">
+        <div class="description">Test <code>line: 10</code>:</div>
+        <div class="video-wrapper">
+            <div class="cue-test">
+                <div class="reference-track-display" style="position: absolute; width: 100%; top: 10lh;">
+                    <span class="reference-cue">Test Text</span>
+                </div>
+            </div>
+            <video muted playsinline>
+                <source src="../../common_assets/media/silent.mp3#t=0.75" type="audio/mp3">
+                <track src="vttcue-test.webvtt" kind="captions" default>
+            </video>
+        </div>
+    </div>
+
+    <div class="vttcue-test" id="test9">
+        <div class="description">Test <code>line: 33% center</code>:</div>
+        <div class="video-wrapper">
+            <div class="cue-test">
+                <div class="reference-track-display" style="position: absolute; width: 100%; top: 33%;">
+                    <span class="reference-cue" style="position: relative; bottom: .5lh">Test Text</span>
+                </div>
+            </div>
+            <video muted playsinline>
+                <source src="../../common_assets/media/silent.mp3#t=0.85" type="audio/mp3">
+                <track src="vttcue-test.webvtt" kind="captions" default>
+            </video>
+        </div>
+    </div>
+
+    <div class="vttcue-test" id="test10">
+        <div class="description">Test <code>line: 50% end</code>:</div>
+        <div class="video-wrapper">
+            <div class="cue-test">
+                <div class="reference-track-display" style="position: absolute; width: 100%; top: 50%; text-align: center;">
+                    <span class="reference-cue" style="position: relative; bottom: 1lh">Test Text</span>
+                </div>
+            </div>
+            <video muted playsinline>
+                <source src="../../common_assets/media/silent.mp3#t=0.95" type="audio/mp3">
+                <track src="vttcue-test.webvtt" kind="captions" default>
+            </video>
+        </div>
+    </div>
+
+
+    <div class="vttcue-test" id="test11">
+        <div class="description">Test <code>position: 25%</code>:</div>
+        <div class="video-wrapper">
+            <div class="cue-test">
+                <div class="reference-track-display" style="position: absolute; width: 50%; left:0; bottom: 0%; text-align: center;">
+                    <span class="reference-cue">Test Text</span>
+                </div>
+            </div>
+            <video muted playsinline>
+                <source src="../../common_assets/media/silent.mp3#t=1.05" type="audio/mp3">
+                <track src="vttcue-test.webvtt" kind="captions" default>
+            </video>
+        </div>
+    </div>
+
+    <div class="vttcue-test" id="test12">
+        <div class="description">Test <code>position:10%,line-left align:left size:35%</code>:</div>
+        <div class="video-wrapper">
+            <div class="cue-test">
+                <div class="reference-track-display" style="position: absolute; width: 35%; left:10%; bottom: 0%; text-align: left;">
+                    <span class="reference-cue">Test Text</span>
+                </div>
+            </div>
+            <video muted playsinline>
+                <source src="../../common_assets/media/silent.mp3#t=1.15" type="audio/mp3">
+                <track src="vttcue-test.webvtt" kind="captions" default>
+            </video>
+        </div>
+    </div>
+
+    <div class="vttcue-test" id="test12">
+        <div class="description">Test <code>&lt;ruby&gt;</code>:</div>
+        <div class="video-wrapper">
+            <div class="cue-test">
+                <div class="reference-track-display" style="position: absolute; height: 100%; left: 0%; writing-mode: vertical-rl;">
+                    <span class="reference-cue"><ruby>Test<rt>Ruby</rt></ruby> Text</span>
+                </div>
+            </div>
+            <video muted playsinline>
+                <source src="../../common_assets/media/silent.mp3#t=1.25" type="audio/mp3">
+                <track src="vttcue-test.webvtt" kind="captions" default>
+            </video>
+        </div>
+    </div>
+</div>
