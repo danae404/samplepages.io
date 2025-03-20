@@ -1,0 +1,27 @@
+<html>
+    <head>
+        <script>
+            let button = document.getElementById('injectButton');
+            button.addEventListener('click', function() {
+    var videoContainer = document.getElementById('videoContainer');
+    var videoElement = document.createElement('video');
+    videoElement.setAttribute('width', '640');
+    videoElement.setAttribute('height', '360');
+    videoElement.setAttribute('controls', 'true');
+
+    var sourceElement = document.createElement('source');
+    sourceElement.setAttribute('src', 'trees.mp4');
+    sourceElement.setAttribute('type', 'video/mp4');
+
+    videoElement.appendChild(sourceElement);
+    videoContainer.appendChild(videoElement);
+});
+
+        </script>
+    </head>
+    <body>
+            <button id="injectButton" type="button">Inject video</button>
+
+            <div id="videoContainer"></div>
+    </body>
+</html>
