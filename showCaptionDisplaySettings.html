@@ -1,0 +1,16 @@
+<html>
+    <body>
+        <video id="video" muted width="50%">
+            <source id="videoSource" src="trees.mp4">
+            <track src="region-position.vtt" kind="captions" srclang="en" label="English" default>
+        </video>
+        <button id="button">Show Caption Display Settings</button>
+    </body>
+</html>
+<script>
+let video = document.getElementById("video");
+let button = document.getElementById("button");
+button.addEventListener('click', event => {
+    video.showCaptionDisplaySettings({anchorNode: event.target, positionArea: "top center"});
+});
+</script>
