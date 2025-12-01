@@ -10,7 +10,9 @@
 <script>
 let video = document.getElementById("video");
 let button = document.getElementById("button");
-button.addEventListener('click', event => {
-    video.showCaptionDisplaySettings({anchorNode: event.target, positionArea: "top center"});
-});
+if ("showCaptionDisplaySettings" in HTMLMediaElement) {
+	button.addEventListener('click', event => {
+    	video.showCaptionDisplaySettings();
+	});
+}
 </script>

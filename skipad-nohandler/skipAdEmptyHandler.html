@@ -1,0 +1,12 @@
+<html>
+    <body>
+        <video id="video" controls muted width="50%">
+            <source id="videoSource" src="long-test.mp4">
+        </video>
+        <script>
+            if ("mediaSession" in navigator) {
+                navigator.mediaSession.setActionHandler("skipad", () => {});
+            }
+        </script>
+    </body>
+</html>
