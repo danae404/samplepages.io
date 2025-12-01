@@ -10,9 +10,7 @@
 <script>
 let video = document.getElementById("video");
 let button = document.getElementById("button");
-if ("showCaptionDisplaySettings" in HTMLMediaElement) {
-	button.addEventListener('click', event => {
-    	video.showCaptionDisplaySettings();
-	});
-}
+button.addEventListener('click', event => {
+    video.showCaptionDisplaySettings();
+});
 </script>
