@@ -18,9 +18,15 @@ window.addEventListener('load', async event => {
 	video.load();
 });
 
+function click() {
+	let video = document.querySelector('video');
+	video.load();
+}
 </script>
 </head>
 <body>
 <div>
 	<video controls playsinline></video>
 </div>
+<button onclick="click()">Re-load video</button>
+</body>
