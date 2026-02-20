@@ -20,6 +20,9 @@ window.addEventListener('load', async event => {
 
 function click() {
 	let video = document.querySelector('video');
+	video.innerHTML = "";
+    let src2 = video.appendChild(document.createElement('source'));
+	src2.src = 'multiple_text_tracks.m3u8';
 	video.load();
 }
 </script>
