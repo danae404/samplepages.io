@@ -16,16 +16,16 @@ window.addEventListener('load', async event => {
 	src1.src = 'multiple_text_tracks.m3u8';
 
 	video.load();
-});
 
-let button = document.querySelector('button');
-button.addEventListener("pointerdown", async event => {
-	let video = document.querySelector('video');
-	video.innerHTML = "";
-    let src2 = video.appendChild(document.createElement('source'));
-	src2.src = 'multiple_text_tracks.m3u8';
-	video.load();
-	video.play();
+	let button = document.querySelector('button');
+	button.addEventListener("pointerdown", async event => {
+		let video = document.querySelector('video');
+		video.innerHTML = "";
+    	let src2 = video.appendChild(document.createElement('source'));
+		src2.src = 'multiple_text_tracks.m3u8';
+		video.load();
+		video.play();
+	});
 });
 </script>
 </head>
