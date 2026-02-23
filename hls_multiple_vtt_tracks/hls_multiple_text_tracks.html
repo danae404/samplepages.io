@@ -18,18 +18,20 @@ window.addEventListener('load', async event => {
 	video.load();
 });
 
-function click() {
+let button = document.querySelector('button');
+button.addEventListener("pointerdown", async event => {
 	let video = document.querySelector('video');
 	video.innerHTML = "";
     let src2 = video.appendChild(document.createElement('source'));
 	src2.src = 'multiple_text_tracks.m3u8';
 	video.load();
-}
+	video.play();
+});
 </script>
 </head>
 <body>
 <div>
 	<video controls playsinline></video>
 </div>
-<button onclick="click()">Re-load video</button>
+<button>Re-load video</button>
 </body>
