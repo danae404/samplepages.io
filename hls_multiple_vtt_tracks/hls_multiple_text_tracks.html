@@ -14,7 +14,7 @@ window.addEventListener('load', async event => {
 
 	let src1 = video.appendChild(document.createElement('source'));
 	src1.src = 'multiple_text_tracks.m3u8';
-
+	video.setAttribute("src", "multiple_text_tracks.m3u8");
 	video.load();
 
 	let button = document.querySelector('button');
