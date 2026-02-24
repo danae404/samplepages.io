@@ -1,38 +1,33 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Multiple WebVTT Text Tracks - HLS</title>
 <style>
-	video {
-		border: 1px solid black;
-		max-width: 100%;
-	}
+video {
+visibility: hidden;
+}
 </style>
 <script>
 window.addEventListener('load', async event => { 
-	let video = document.createElement('video');
-	video.muted = true;
-	video.playsInline = true;
+let video = document.querySelector('video');
+video.muted = true;
+video.playsInline = true;
 
-	let videoHasLoadedOnce = false;
-	let button = document.querySelector('button');
-	button.addEventListener("pointerdown", async event => {
-		if (videoHasLoadedOnce) {
-			video.removeAttribute("src");
-			video.innerHTML = "";
-		}
-		
-		video.setAttribute("src", "multiple_text_tracks.m3u8");
-		let srcElem = video.appendChild(document.createElement('source'));
-		srcElem.src = 'multiple_text_tracks.m3u8';
-		video.load();
+let src1 = video.appendChild(document.createElement('source'));
+src1.src = 'multiple_text_tracks.m3u8';
 
-		if (!videoHasLoadedOnce) {
-			video.webkitEnterFullscreen();
-			videoHasLoadedOnce = true;
-		}
-	});
+	video.setAttribute("src", "multiple_text_tracks.m3u8");
+video.load();
+
+let button = document.querySelector('button');
+button.addEventListener("pointerdown", async event => {
+let video = document.querySelector('video');
+video.innerHTML = "";
+video.removeAttribute("src");
+video.setAttribute("src", "multiple_text_tracks.m3u8");
+});
 });
 </script>
 </head>
 <body>
-<button>Load video</button>
-</body>
+<video controls playsinline></video>
+</div>
+<button>Re-load video</button>
