@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<!--
+  Manual test page for the MediaSession call-to-action feature
+  (navigator.mediaSession.metadata.callToActionLabel + setActionHandler('call-to-action', ...)).
+
+  SETUP
+  1. Enable the experimental feature. It's status: testable in UnifiedWebPreferences.yaml, which
+     means it shows up in Safari's experimental-features UI:
+       - macOS Safari: Develop menu > Feature Flags... > search "call-to-action" > enable
+         "MediaSession call-to-action action"
+       - iOS Safari: Settings > Apps > Safari > Advanced > Feature Flags > "MediaSession
+         call-to-action action"
+     (If you don't see a Develop menu: Safari > Settings > Advanced > "Show features for web
+     developers".)
+  2. Open this file directly (File > Open File..., or just double-click it).
+  3. Watch the on-page log below, AND watch the unified log for the WebKit-side plumbing (see
+     LOGGING below) — the two together show the full chain from JS down to the UI process.
+
+  LOGGING
+  Run this in Terminal before clicking around on the page, then click buttons and watch output
+  arrive in both places at once:
+
+    log stream --level debug --predicate 'eventMessage CONTAINS[c] "calltoaction" OR eventMessage CONTAINS "MediaSession::metadataUpdated" OR eventMessage CONTAINS "MediaSession::setActionHandler"'
+
+  You should see, in order, as you click through the buttons below:
+    - "MediaSession::setActionHandler ... adding call-to-action"        (registering the handler)
+    - "MediaSession::metadataUpdated title: ..."                        (in-place metadata edits)
+    - "PlaybackSessionManager::metadataChanged ..."                     (WebContent process)
+    - "PlaybackSessionManager::updateCallToActionState hasHandler=... label=..."
+    - "PlaybackSessionManagerProxy::canShowCallToActionChanged hasHandler=... label=... — no
+      AVKit/PiP API to call into yet"                                   (UI process — current end
+                                                                          of the forward chain)
+
+  WHAT THIS PAGE CANNOT TEST
+  The reverse direction (an AVKit/PiP button tap invoking your registered handler) has been
+  removed from WebKit entirely — there is no PlaybackSessionModelContext::callToAction(),
+  PlaybackSessionManagerProxy::callToAction(), or Messages::PlaybackSessionManager::CallToAction
+  anymore. Only the forward/announce direction (JS sets metadata/registers a handler ->
+  CanShowCallToActionChanged reaches the UI process) exists. There's no button on this page for
+  invoking the handler, because there's nothing in WebKit left to invoke it.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>MediaSession call-to-action manual test</title>
+<style>
+  body { font-family: -apple-system, sans-serif; max-width: 720px; margin: 2em auto; padding: 0 1em; }
+  video { width: 100%; max-height: 360px; background: #000; }
+  .row { display: flex; flex-wrap: wrap; gap: 0.5em; margin: 0.75em 0; }
+  button { padding: 0.5em 0.9em; font-size: 0.95em; }
+  #status { font-size: 0.9em; color: #555; }
+  #log { background: #111; color: #0f0; font: 12px ui-monospace, monospace; padding: 0.75em;
+    height: 220px; overflow-y: auto; white-space: pre-wrap; border-radius: 6px; }
+  h2 { margin-top: 1.5em; border-bottom: 1px solid #ddd; padding-bottom: 0.25em; }
+</style>
+</head>
+<body>
+
+<h1>MediaSession call-to-action manual test</h1>
+<p id="status">Checking support for <code>metadata.callToActionLabel</code>… </p>
+
+<h2>1. Video</h2>
+<p>Pick a local video file (any format the browser can play), then press Play. The video needs
+to actually be playing for it to become the page's "controls manager" media element — that's a
+prerequisite for any of this plumbing to fire.</p>
+<input type="file" id="fileInput" accept="video/*">
+<div class="row">
+  <video id="video" controls playsinline></video>
+</div>
+<div class="row">
+  <button id="playBtn">Play</button>
+  <button id="pauseBtn">Pause</button>
+</div>
+
+<h2>2. Metadata (whole-object replacement)</h2>
+<p>Exercises <code>MediaSession::setMetadata()</code> → <code>notifyMetadataObservers()</code>.</p>
+<div class="row">
+  <button data-set-metadata="visit">Set metadata, label = "visit"</button>
+  <button data-set-metadata="download">Set metadata, label = "download"</button>
+</div>
+
+<h2>3. Metadata (in-place mutation)</h2>
+<p>Exercises <code>MediaMetadata::setCallToActionLabel()</code> → <code>metadataUpdated()</code> →
+<code>MediaSession::metadataUpdated()</code> — a different code path than section 2, requires
+metadata to already be set first.</p>
+<div class="row">
+  <button data-update-label="visit">metadata.callToActionLabel = "visit"</button>
+  <button data-update-label="download">metadata.callToActionLabel = "download"</button>
+</div>
+
+<h2>4. Action handler</h2>
+<p>Exercises <code>MediaSession::setActionHandler()</code>, which throws a <code>TypeError</code>
+if the experimental feature above isn't enabled.</p>
+<div class="row">
+  <button id="registerBtn">setActionHandler('call-to-action', fn)</button>
+  <button id="unregisterBtn">setActionHandler('call-to-action', null)</button>
+</div>
+
+<h2>Log</h2>
+<div id="log"></div>
+
+<script>
+const logEl = document.getElementById('log');
+function log(message) {
+  const line = `[${new Date().toISOString().split('T')[1].replace('Z', '')}] ${message}`;
+  logEl.textContent += line + '\n';
+  logEl.scrollTop = logEl.scrollHeight;
+  console.log(message);
+}
+
+const statusEl = document.getElementById('status');
+const supportsCallToActionLabel = !!(window.MediaMetadata && 'callToActionLabel' in MediaMetadata.prototype);
+if (navigator.mediaSession) {
+  statusEl.textContent = 'navigator.mediaSession is available. '
+    + (supportsCallToActionLabel
+      ? 'metadata.callToActionLabel getter is present on MediaMetadata.prototype.'
+      : 'metadata.callToActionLabel getter is NOT present — the experimental feature is probably disabled, or this build predates the feature.');
+} else {
+  statusEl.textContent = 'navigator.mediaSession is not available in this browser at all.';
+}
+
+const video = document.getElementById('video');
+document.getElementById('fileInput').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file)
+    return;
+  video.src = URL.createObjectURL(file);
+  log(`Loaded local file: ${file.name}`);
+});
+
+document.getElementById('playBtn').addEventListener('click', () => {
+  video.play().then(() => log('video.play() resolved')).catch((e) => log(`video.play() rejected: ${e}`));
+});
+document.getElementById('pauseBtn').addEventListener('click', () => {
+  video.pause();
+  log('video.pause() called');
+});
+
+document.querySelectorAll('[data-set-metadata]').forEach((button) => {
+  button.addEventListener('click', () => {
+    const label = button.dataset.setMetadata;
+    try {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: 'Manual test title',
+        artist: 'Manual test artist',
+        album: 'Manual test album',
+        callToActionLabel: label,
+      });
+      log(`Set navigator.mediaSession.metadata with callToActionLabel: '${label}'`);
+    } catch (e) {
+      log(`new MediaMetadata(...) threw: ${e}`);
+    }
+  });
+});
+
+document.querySelectorAll('[data-update-label]').forEach((button) => {
+  button.addEventListener('click', () => {
+    const label = button.dataset.updateLabel;
+    if (!navigator.mediaSession.metadata) {
+      log('No metadata set yet — click a "Set metadata" button in section 2 first.');
+      return;
+    }
+    try {
+      navigator.mediaSession.metadata.callToActionLabel = label;
+      log(`Set metadata.callToActionLabel = '${label}' on the existing metadata object`);
+    } catch (e) {
+      log(`Setting metadata.callToActionLabel threw: ${e}`);
+    }
+  });
+});
+
+document.getElementById('registerBtn').addEventListener('click', () => {
+  try {
+    navigator.mediaSession.setActionHandler('call-to-action', () => {
+      log('*** call-to-action handler INVOKED ***');
+    });
+    log("setActionHandler('call-to-action', fn) succeeded");
+  } catch (e) {
+    log(`setActionHandler('call-to-action', fn) threw: ${e}`);
+  }
+});
+
+document.getElementById('unregisterBtn').addEventListener('click', () => {
+  try {
+    navigator.mediaSession.setActionHandler('call-to-action', null);
+    log("setActionHandler('call-to-action', null) succeeded");
+  } catch (e) {
+    log(`setActionHandler('call-to-action', null) threw: ${e}`);
+  }
+});
+
+log('Page loaded.');
+</script>
+
+</body>
+</html>
+
