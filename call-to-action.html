@@ -12,7 +12,8 @@
          call-to-action action"
      (If you don't see a Develop menu: Safari > Settings > Advanced > "Show features for web
      developers".)
-  2. Open this file directly (File > Open File..., or just double-click it).
+  2. Put a video file named trees.mp4 next to this HTML file, then open this file directly
+     (File > Open File..., or just double-click it).
   3. Watch the on-page log below, AND watch the unified log for the WebKit-side plumbing (see
      LOGGING below) — the two together show the full chain from JS down to the UI process.
 
@@ -60,12 +61,13 @@
 <p id="status">Checking support for <code>metadata.callToActionLabel</code>… </p>
 
 <h2>1. Video</h2>
-<p>Pick a local video file (any format the browser can play), then press Play. The video needs
-to actually be playing for it to become the page's "controls manager" media element — that's a
+<p>Loads trees.mp4 from the same directory as this HTML file. Press Play. The video needs to
+actually be playing for it to become the page's "controls manager" media element — that's a
 prerequisite for any of this plumbing to fire.</p>
-<input type="file" id="fileInput" accept="video/*">
 <div class="row">
-  <video id="video" src="trees.mp4" controls playsinline></video>
+  <video id="video" controls playsinline>
+      <source id="videoSource" src="trees.mp4">
+  </video>
 </div>
 <div class="row">
   <button id="playBtn">Play</button>
@@ -120,12 +122,8 @@ if (navigator.mediaSession) {
 }
 
 const video = document.getElementById('video');
-document.getElementById('fileInput').addEventListener('change', (e) => {
-  const file = e.target.files[0];
-  if (!file)
-    return;
-  video.src = URL.createObjectURL(file);
-  log(`Loaded local file: ${file.name}`);
+video.addEventListener('error', () => {
+  log(`video failed to load (looked for trees.mp4 next to this HTML file): ${video.error ? video.error.message : 'unknown error'}`);
 });
 
 document.getElementById('playBtn').addEventListener('click', () => {
@@ -194,4 +192,3 @@ log('Page loaded.');
 
 </body>
 </html>
-
