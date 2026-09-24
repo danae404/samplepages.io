@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fullscreen safe-area test</title>
+<style>
+  :root { color-scheme: dark; }
+  html, body {
+    margin: 0;
+    background: #111;
+    color: #eee;
+    font-family: -apple-system, sans-serif;
+  }
+  main {
+    padding: 20px;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+  }
+  h1 { font-size: 20px; }
+  h2 { font-size: 16px; }
+  p { color: #aaa; font-size: 14px; line-height: 1.4; }
+  section {
+    margin-bottom: 32px;
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 16px;
+  }
+  button {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    font-size: 16px;
+    border: none;
+    border-radius: 8px;
+    background: #0a84ff;
+    color: white;
+    margin-top: 12px;
+  }
+
+  /* --- BROKEN: reserves fixed padding around the video for env(safe-area-inset-*)
+     on all three relevant edges (left/right/bottom). The outer wrapper itself
+     correctly expands to fill the whole screen in fullscreen, but that padding
+     shrinks the actual <video> content away from the true screen edges — the
+     same shape of bug as a real one found in the wild, which used
+     `padding-block: 20px calc(20px + env(safe-area-inset-bottom))`. */
+  .broken-player {
+    background: black;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+  }
+  .broken-player:fullscreen {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    box-sizing: border-box;
+    padding-left: calc(20px + env(safe-area-inset-left));
+    padding-right: calc(20px + env(safe-area-inset-right));
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+  }
+  .broken-player video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+
+  /* --- CORRECT: no reserved padding in fullscreen, so the video is free to
+     expand all the way to the physical screen edges, including under the
+     notch/Dynamic Island and behind the home indicator. */
+  .correct-player {
+    background: black;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+  }
+  .correct-player:fullscreen {
+    width: 100vw;
+    height: 100vh;
+  }
+  .correct-player video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Element-fullscreen safe-area test</h1>
+  <p>
+    Run this on an actual iPhone in Safari. Rotate to landscape before tapping a button below —
+    element fullscreen video is a landscape-only scenario, and that's also where the notch/Dynamic
+    Island shows up as a left/right inset. After entering fullscreen, try rotating portrait&harr;landscape
+    to also exercise the re-check-on-rotation path.
+  </p>
+
+  <section>
+    <h2>1. Broken: leaves a black gap</h2>
+    <p>
+      This wrapper reserves fixed padding around the video for env(safe-area-inset-*), so the video
+      never reaches the true screen edges in fullscreen. This should get redirected to native video
+      fullscreen instead of showing the gap.
+    </p>
+    <div class="broken-player" id="broken">
+      <video src="long-test.mp4" muted loop playsinline></video>
+    </div>
+    <button onclick="document.getElementById('broken').requestFullscreen()">Enter fullscreen (broken)</button>
+  </section>
+
+  <section>
+    <h2>2. Correct: fills the whole screen</h2>
+    <p>
+      This wrapper puts no padding around the video in fullscreen, so it's free to expand all the way
+      to the physical screen edges. This should stay as normal element fullscreen (no redirect).
+    </p>
+    <div class="correct-player" id="correct">
+      <video src="long-test.mp4" muted loop playsinline></video>
+    </div>
+    <button onclick="document.getElementById('correct').requestFullscreen()">Enter fullscreen (correct)</button>
+  </section>
+</main>
+</body>
+</html>
