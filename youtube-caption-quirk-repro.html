@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>YouTubeCaptionQuirk.js repro: caption container swap on "rotation"</title>
+<style>
+  body { font-family: -apple-system, sans-serif; padding: 16px; }
+  #log { white-space: pre-wrap; font-family: monospace; font-size: 14px; line-height: 1.5; }
+  .pass { color: green; font-weight: bold; }
+  .fail { color: red; font-weight: bold; }
+  #player { border: 1px solid #ccc; width: 320px; height: 180px; position: relative; margin-bottom: 16px; }
+  video { width: 100%; height: 100%; background: black; }
+  .ytp-caption-window-container { position: absolute; bottom: 0; width: 100%; text-align: center; color: white; background: rgba(0,0,0,0.6); }
+  button { font-size: 16px; padding: 8px 16px; margin-right: 8px; }
+</style>
+</head>
+<body>
+
+<h2>YouTubeCaptionQuirk.js repro</h2>
+<p>Simulates YouTube's iframe player replacing the <code>.ytp-caption-window-container</code> node
+(as it plausibly does on a resize/orientation change) <em>without</em> firing any of the events
+the quirk listens for: <code>onCaptionsTrackListChanged</code>, <code>captionschanged</code>,
+<code>webkitpresentationmodechanged</code>, <code>webkitexternalplaybackchanged</code>, <code>emptied</code>.</p>
+
+<div id="player">
+  <div id="video-wrap">
+    <video id="video" muted controls></video>
+  </div>
+  <!-- .ytp-caption-window-container is intentionally NOT in the initial markup.
+       Real YouTube only creates it once captions are turned on, which happens
+       AFTER setupCaptionMirroring() has already run — so step 2 below exercises
+       the quirk's _waitObserver path, not the "container already exists" path. -->
+</div>
+
+<button id="step1">1. Setup quirk (no captions yet)</button>
+<button id="step2">2. Captions turn on (insert CUE 1 container)</button>
+<button id="step3">3. Simulate rotation (swap container node)</button>
+<button id="step4">4. Check if mirrored track updated</button>
+
+<div id="log"></div>
+
+<!-- Verbatim copy of Source/WebCore/Modules/modern-media-controls/media/YouTubeCaptionQuirk.js
+     (inlined instead of loaded via file:// <script src> to avoid WebKit's
+     local-file cross-directory script loading restrictions). -->
+<script>
+(function() {
+    "use strict";
+
+    class CaptionMirror {
+        static _instances = new WeakMap();
+
+        // Public methods:
+        constructor(video) {
+            // If there was a previous instance of CaptionMirror associated with the same video
+            // invalidate the previous instance, which removes all event listeners and mutation
+            // observers:
+            let oldMirror = CaptionMirror._instances.get(video);
+            if (oldMirror) {
+                oldMirror.invalidate();
+                CaptionMirror._instances.delete(video);
+            }
+            CaptionMirror._instances.set(video, this);
+
+            this._video = video;
+            this._player = video.parentElement.parentElement;
+            this._captionWindowSelector = '.ytp-caption-window-container';
+            this._mirrorTrack = video.addTextTrack('forced', 'YouTube Captions');
+            this._mirrorTrack.mode = 'hidden';
+            this._captionObserver = null;
+            this._waitObserver = null;
+            this._observedCaptionContainer = null;
+
+            this._onCaptionsTrackListChanged = () => this._handleCaptionStateChanged();
+            this._onCaptionsChanged = () => this._handleCaptionStateChanged();
+            this._player.addEventListener('onCaptionsTrackListChanged', this._onCaptionsTrackListChanged);
+            this._player.addEventListener('captionschanged', this._onCaptionsChanged);
+
+            navigator.mediaSession.setActionHandler('togglecaptions', details => this._handleMediaSessionAction(details));
+            navigator.mediaSession.setActionHandler('selectcaptiontrack', details => this._handleMediaSessionAction(details));
+
+            this._onPresentationModeChanged = () => this._handlePresentationModeChanged();
+            this._video.addEventListener('webkitpresentationmodechanged', this._onPresentationModeChanged);
+            this._video.addEventListener('webkitexternalplaybackchanged', this._onPresentationModeChanged);
+
+            this._onEmptied = () => this._handleResourceChanged();
+            this._video.addEventListener('emptied', this._onEmptied);
+
+            this._attachCaptionWindowObserver();
+
+            this._syncTrackList();
+        }
+
+        invalidate() {
+            if (this._captionObserver) {
+                this._captionObserver.disconnect();
+                this._captionObserver = null;
+            }
+            if (this._waitObserver) {
+                this._waitObserver.disconnect();
+                this._waitObserver = null;
+            }
+            this._observedCaptionContainer = null;
+            this._mirrorTrack.mode = 'disabled';
+            this._player.removeEventListener('onCaptionsTrackListChanged', this._onCaptionsTrackListChanged);
+            this._player.removeEventListener('captionschanged', this._onCaptionsChanged);
+            this._video.removeEventListener('webkitpresentationmodechanged', this._onPresentationModeChanged);
+            this._video.removeEventListener('webkitexternalplaybackchanged', this._onPresentationModeChanged);
+            this._video.removeEventListener('emptied', this._onEmptied);
+        }
+
+        // Private methods:
+        _handleCaptionStateChanged() {
+            this._syncTrackList();
+            this._updateCues();
+        }
+
+        _handleResourceChanged() {
+            this._removeAllCues();
+            this._detachCaptionObserver();
+            this._attachCaptionWindowObserver();
+        }
+
+        _syncTrackList() {
+            var trackList = this._getTrackList();
+            var activeTrack = this._getActiveTrack();
+            navigator.mediaSession.captionTracks = trackList?.map(track => {
+                return { label: track.displayName, language: track.languageCode, enabled: this._areTracksEqual(track, activeTrack) };
+            }) ?? [];
+            navigator.mediaSession.captionsEnabled = this._player.isSubtitlesOn();
+        }
+
+        _updateCues() {
+            var container = this._player.querySelector(this._captionWindowSelector);
+            if (!container) {
+                this._removeAllCues();
+                this._detachCaptionObserver();
+                this._attachCaptionWindowObserver();
+                return;
+            }
+
+            if (container !== this._observedCaptionContainer)
+                this._attachCaptionObserver(container);
+
+            this._syncCues(container);
+        }
+
+        _removeAllCues() {
+            while (this._mirrorTrack.cues?.length)
+                this._mirrorTrack.removeCue(this._mirrorTrack.cues[0]);
+        }
+
+        _syncCues(captionWindowContainer) {
+            this._removeAllCues();
+            for (var captionWindow of captionWindowContainer.querySelectorAll('.caption-window')) {
+                var text = Array.from(captionWindow.querySelectorAll('.captions-text > span')).map(span => span.textContent).join('\n');
+                if (!text)
+                    continue;
+                var cue = new VTTCue(0, 10e7, text);
+                switch (captionWindow.style.textAlign) {
+                case 'left':
+                case 'start':
+                    cue.align = 'start';
+                    cue.positionAlign = 'line-left'
+                    break;
+                case 'end':
+                case 'right':
+                    cue.align = 'end';
+                    cue.positionAlign = 'line-right';
+                    break;
+                default:
+                    cue.align = 'center';
+                    cue.positionAlign = 'center';
+                }
+                var topPercent = parseFloat(captionWindow.style.top);
+                var bottomPercent = parseFloat(captionWindow.style.bottom);
+                var leftPercent = parseFloat(captionWindow.style.left);
+                var rightPercent = parseFloat(captionWindow.style.right);
+                if (!isNaN(topPercent)) {
+                    cue.snapToLines = false;
+                    cue.line = topPercent;
+                } else if (!isNaN(bottomPercent)) {
+                    cue.snapToLines = false;
+                    cue.line = 100 - bottomPercent;
+                }
+                if (!isNaN(leftPercent))
+                    cue.position = leftPercent;
+                else if (!isNaN(rightPercent))
+                    cue.position = 100 - rightPercent;
+                this._mirrorTrack.addCue(cue);
+            }
+        }
+
+        _attachCaptionWindowObserver() {
+            var container = this._player.querySelector(this._captionWindowSelector);
+            if (container) {
+                this._attachCaptionObserver(container);
+                return;
+            }
+
+            if (this._waitObserver)
+                return;
+
+            this._waitObserver = new MutationObserver(() => {
+                var container = this._player.querySelector(this._captionWindowSelector);
+                if (container) {
+                    this._attachCaptionObserver(container);
+                    this._waitObserver.disconnect();
+                    this._waitObserver = null;
+                    this._syncCues(container);
+                }
+            });
+            this._waitObserver.observe(this._player, { childList: true, subtree: true });
+        }
+
+        _detachCaptionObserver() {
+            if (this._captionObserver) {
+                this._captionObserver.disconnect();
+                this._captionObserver = null;
+            }
+            this._observedCaptionContainer = null;
+        }
+
+        _attachCaptionObserver(container) {
+            this._detachCaptionObserver();
+            this._observedCaptionContainer = container;
+            this._captionObserver = new MutationObserver(() => this._updateCues());
+            this._captionObserver.observe(container, {
+                childList: true,
+                subtree: true,
+                characterData: true,
+            });
+        }
+
+        _getIsInline() {
+            if (this._video.webkitIsInExternalPlayback)
+                return false;
+            if (typeof this._video.webkitPresentationMode === 'undefined')
+                return !this._video.webkitDisplayingFullscreen;
+            return this._video.webkitPresentationMode == 'inline';
+        }
+
+        _handlePresentationModeChanged() {
+            var isInline = this._getIsInline();
+            if (!isInline)
+                this._player.loadModule('captions');
+
+            this._updateCues();
+            this._mirrorTrack.mode = isInline ? 'hidden' : 'showing';
+
+            var captionContainer = this._player.querySelector(this._captionWindowSelector);
+            if (!captionContainer)
+                return;
+
+            if (isInline)
+                captionContainer.style.removeProperty('visibility');
+            else
+                captionContainer.style.setProperty('visibility', 'hidden', 'important');
+        }
+
+        _handleMediaSessionAction(details) {
+            switch (details.action) {
+            case 'togglecaptions':
+                this._player.toggleSubtitles();
+                break;
+            case 'selectcaptiontrack': {
+                var list = this._getTrackList();
+                var index = details.trackIndex;
+                if (index >= 0 && index < list.length)
+                    this._player.setOption('captions', 'track', list[index]);
+                else
+                    this._player.setOption('captions', 'track', {});
+                break;
+            }
+            }
+        }
+
+        // Utility methods:
+        _getTrackList() { return this._player.getOption('captions', 'tracklist') || []; }
+        _getActiveTrack() { return this._player.getOption('captions', 'track'); }
+        _areTracksEqual(a, b) { return a && b && a.vss_id === b.vss_id;  }
+    }
+
+    window.setupCaptionMirroring = function(video) {
+        new CaptionMirror(video);
+    }
+}());
+</script>
+
+<script>
+  function log(msg, cls) {
+    const div = document.getElementById('log');
+    const line = document.createElement('div');
+    if (cls) line.className = cls;
+    line.textContent = msg;
+    div.appendChild(line);
+  }
+
+  // Stub the MediaSession quirk-specific surface so this repro runs in any
+  // browser, independent of whether the WebKit MediaSession IDL additions
+  // (captionTracks/captionsEnabled/'selectcaptiontrack' action) are present.
+  const fakeActionHandlers = {};
+  navigator.mediaSession.setActionHandler = (action, handler) => { fakeActionHandlers[action] = handler; };
+  Object.defineProperty(navigator.mediaSession, 'captionTracks', { value: undefined, writable: true, configurable: true });
+  Object.defineProperty(navigator.mediaSession, 'captionsEnabled', { value: undefined, writable: true, configurable: true });
+
+  // Fake YouTube player API object (video.parentElement.parentElement).
+  const player = document.getElementById('player');
+  player.querySelector = Element.prototype.querySelector.bind(player);
+  player.isSubtitlesOn = () => true;
+  player.getOption = (module, key) => {
+    if (module === 'captions' && key === 'tracklist') return [{ displayName: 'English', languageCode: 'en', vss_id: '.en' }];
+    if (module === 'captions' && key === 'track') return { displayName: 'English', languageCode: 'en', vss_id: '.en' };
+    return null;
+  };
+  player.setOption = () => {};
+  player.toggleSubtitles = () => {};
+  player.loadModule = () => {};
+
+  const video = document.getElementById('video');
+
+  function findMirrorTrack() {
+    for (const track of video.textTracks) {
+      if (track.label === 'YouTube Captions') return track;
+    }
+    return null;
+  }
+
+  function dumpMirrorTrack(label) {
+    const track = findMirrorTrack();
+    if (!track) {
+      log(`${label}: no mirror track found`, 'fail');
+      return;
+    }
+    const texts = Array.from(track.cues || []).map(c => c.text);
+    log(`${label}: mirror track cues = ${JSON.stringify(texts)}`);
+  }
+
+  document.getElementById('step1').addEventListener('click', () => {
+    window.setupCaptionMirroring(video);
+    setTimeout(() => dumpMirrorTrack('After setup, before captions exist (expect [])'), 50);
+  });
+
+  document.getElementById('step2').addEventListener('click', () => {
+    // Simulate YouTube creating the caption window the first time captions
+    // are turned on. This exercises the quirk's _waitObserver path, which
+    // DOES call _syncCues() when the container first appears.
+    const container = document.createElement('div');
+    container.className = 'ytp-caption-window-container';
+    container.id = 'captions-v1';
+    container.innerHTML = `
+      <div class="caption-window" style="text-align:center; bottom:5%;">
+        <div class="captions-text"><span>CUE 1 (initial)</span></div>
+      </div>`;
+    player.appendChild(container);
+    setTimeout(() => dumpMirrorTrack('After captions turn on (expect CUE 1)'), 50);
+  });
+
+  document.getElementById('step3').addEventListener('click', () => {
+    // Simulate YouTube's player tearing down and rebuilding its caption
+    // chrome on resize/orientationchange: remove the OLD container node
+    // entirely and insert a brand NEW one with new cue text. Deliberately
+    // do NOT fire any of the 5 events YouTubeCaptionQuirk.js listens for.
+    const oldContainer = document.getElementById('captions-v1');
+    oldContainer.remove();
+
+    const newContainer = document.createElement('div');
+    newContainer.className = 'ytp-caption-window-container';
+    newContainer.id = 'captions-v2';
+    newContainer.innerHTML = `
+      <div class="caption-window" style="text-align:center; bottom:5%;">
+        <div class="captions-text"><span>CUE 2 (after rotation)</span></div>
+      </div>`;
+    player.appendChild(newContainer);
+    log('Simulated rotation: old .ytp-caption-window-container removed, new one inserted with CUE 2 (no quirk-observed events fired)');
+  });
+
+  document.getElementById('step4').addEventListener('click', () => {
+    setTimeout(() => {
+      const track = findMirrorTrack();
+      const texts = Array.from(track?.cues || []).map(c => c.text);
+      if (texts.includes('CUE 2 (after rotation)')) {
+        log(`RESULT: mirror track = ${JSON.stringify(texts)}`, 'pass');
+        log('PASS: quirk picked up the new container — theory NOT confirmed as-is.', 'pass');
+      } else {
+        log(`RESULT: mirror track = ${JSON.stringify(texts)}`, 'fail');
+        log('BUG REPRODUCED: mirror track is stale/empty after the container node was swapped without a quirk-observed event.', 'fail');
+      }
+    }, 50);
+  });
+</script>
+</body>
+</html>
